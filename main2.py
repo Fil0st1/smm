@@ -177,7 +177,8 @@ async def order(ctx, service_id: str, link: str, qty: int):
     for s in r:
         if str(s["service"]) == service_id:
             rate = float(s["rate"])
-            cost = (rate / 1000) * qty
+            base_cost = (rate / 1000) * qty
+            cost = base_cost * 1.3  # add 30% markup
             break
 
     if cost is None:
@@ -186,7 +187,7 @@ async def order(ctx, service_id: str, link: str, qty: int):
 
     # Deduct balance
     if not deduct_balance(ctx.author.id, cost):
-        await ctx.send(f"❌ Insufficient balance. You need €{cost:.2f} for this order.")
+        await ctx.send(f"❌ Insufficient balance. You need €{cost:.2f} for this order (includes 30% fee).")
         return
 
     # Place order
@@ -200,9 +201,10 @@ async def order(ctx, service_id: str, link: str, qty: int):
     result = requests.post(API_URL, data=payload).json()
 
     if "order" in result:
-        await ctx.send(f"✅ Order placed! ID: {result['order']}, Cost: €{cost:.2f}")
+        await ctx.send(f"✅ Order placed! ID: {result['order']}, Cost: €{cost:.2f} (incl. 30% fee)")
     else:
         await ctx.send(f"⚠️ Failed to place order: {result}")
+
 
 
 
