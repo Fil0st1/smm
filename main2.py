@@ -187,7 +187,7 @@ async def order(ctx, service_id: str, link: str, qty: int):
 
     # Deduct balance
     if not deduct_balance(ctx.author.id, cost):
-        await ctx.send(f"❌ Insufficient balance. You need €{cost:.2f} for this order (includes 30% fee).")
+        await ctx.send(f"❌ Insufficient balance.")
         return
 
     # Place order
@@ -201,7 +201,7 @@ async def order(ctx, service_id: str, link: str, qty: int):
     result = requests.post(API_URL, data=payload).json()
 
     if "order" in result:
-        await ctx.send(f"✅ Order placed! ID: {result['order']}, Cost: €{cost:.2f} (incl. 30% fee)")
+        await ctx.send(f"✅ Order placed! ID: {result['order']},")
     else:
         await ctx.send(f"⚠️ Failed to place order: {result}")
 
