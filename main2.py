@@ -221,8 +221,8 @@ async def status(ctx, order_id: str):
             return
 
         # Extract values safely
-        charge_usd = float(result.get("charge", 0))
-        charge_eur = charge_usd * USD_TO_EUR
+        # charge_usd = float(result.get("charge", 0))
+        # charge_eur = charge_usd * USD_TO_EUR
         start_count = result.get("start_count", "N/A")
         remains = result.get("remains", "N/A")
         status_val = result.get("status", "N/A")
@@ -236,7 +236,7 @@ async def status(ctx, order_id: str):
         )
 
         embed.add_field(name="🆔 ID", value=order_id, inline=True)
-        embed.add_field(name="💰 Charge", value=f"{charge_usd:.5f} USD ≈ {charge_eur:.5f} EUR", inline=False)
+        # embed.add_field(name="💰 Charge", value=f"{charge_usd:.5f} USD ≈ {charge_eur:.5f} EUR", inline=False)
         embed.add_field(name="📈 Start Count", value=start_count, inline=True)
         embed.add_field(name="⏳ Remains", value=remains, inline=True)
         embed.add_field(name="📌 Status", value=status_val, inline=True)
