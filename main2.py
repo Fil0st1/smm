@@ -5,11 +5,13 @@ import sqlite3
 from datetime import datetime, timezone
 import os
 from dotenv import load_dotenv
+import aiohttp
+
 # === CONFIG ===
 load_dotenv() 
 TOKEN = os.getenv("TOKEN")
 
-API_KEY = "76e887c56344025a5ed5ae905e0f67fa"
+API_KEY = os.getenv("API_KEY")
 API_URL = "https://justanotherpanel.com/api/v2"
 PREFIX = "!"
 DB_NAME = "wallet.db"
@@ -170,40 +172,41 @@ async def services(ctx, category: str = None):
 # === COMMAND: Place Order ===
 @bot.command()
 async def order(ctx, service_id: str, link: str, qty: int):
-    # Estimate cost
-    payload = {"key": API_KEY, "action": "services"}
-    r = requests.post(API_URL, data=payload).json()
-    cost = None
-    for s in r:
-        if str(s["service"]) == service_id:
-            rate = float(s["rate"])
-            base_cost = (rate / 1000) * qty
-            cost = base_cost * 1.3  # add 30% markup
-            break
+    async with aiohttp.ClientSession() as session:
+        # get services
+        payload = {"key": API_KEY, "action": "services"}
+        async with session.post(API_URL, data=payload) as resp:
+            services = await resp.json()
 
-    if cost is None:
-        await ctx.send("⚠️ Invalid service ID.")
-        return
+        cost = None
+        for s in services:
+            if str(s["service"]) == service_id:
+                rate = float(s["rate"])
+                base_cost = (rate / 1000) * qty
+                cost = base_cost * 1.3
+                break
 
-    # Deduct balance
-    if not deduct_balance(ctx.author.id, cost):
-        await ctx.send(f"❌ Insufficient balance.")
-        return
+        if cost is None:
+            return await ctx.send("⚠️ Invalid service ID.")
 
-    # Place order
-    payload = {
-        "key": API_KEY,
-        "action": "add",
-        "service": service_id,
-        "link": link,
-        "quantity": qty
-    }
-    result = requests.post(API_URL, data=payload).json()
+        if not deduct_balance(ctx.author.id, cost):
+            return await ctx.send("❌ Insufficient balance.")
 
-    if "order" in result:
-        await ctx.send(f"✅ Order placed! ID: {result['order']},")
-    else:
-        await ctx.send(f"⚠️ Failed to place order: {result}")
+        # place order
+        payload = {
+            "key": API_KEY,
+            "action": "add",
+            "service": service_id,
+            "link": link,
+            "quantity": qty
+        }
+        async with session.post(API_URL, data=payload) as resp:
+            result = await resp.json()
+
+        if "order" in result:
+            await ctx.send(f"✅ Order placed! ID: {result['order']}")
+        else:
+            await ctx.send(f"⚠️ Failed to place order: {result}")
 
 
 
